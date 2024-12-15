@@ -2,8 +2,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SimpleCalculatorAPI.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
 
 // Add services to the container.
 
@@ -12,6 +15,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    /*NOTE: The security implemented for this web service is basic and good for the scale of this project, JWT authentication.
+     In real world scenario, more complex and large scale web services will require more complex security implementations,
+     such as Role-Based Access Control, Issuer and Audience Validation, Token Revocation, Token Refreshing and so on.*/
     //Security Definition for Bearer Authentication
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
@@ -38,6 +44,8 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    options.SupportNonNullableReferenceTypes();
 });
 
 //Registered the SimpleCalculatorService
@@ -46,13 +54,19 @@ builder.Services.AddScoped<ISimpleCalculatorService, SimpleCalculatorService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var secureKey = Environment.GetEnvironmentVariable("TEST_SECURE_KEY");
+        if (string.IsNullOrEmpty(secureKey))
+        {
+            throw new InvalidOperationException("Environment variable is not set.");
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("ThisIsA256BitLongSecureKey!@#$%^"))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secureKey)) //MOVE TO ENV VAR
         };
     });
 

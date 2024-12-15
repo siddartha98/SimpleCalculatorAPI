@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+using DotNetEnv;
 
 namespace SimpleCalculatorAPI.Controllers
 {
@@ -23,10 +24,16 @@ namespace SimpleCalculatorAPI.Controllers
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginRequest loginRequest)
         {
+            var secureKey = Environment.GetEnvironmentVariable("TEST_SECURE_KEY");
+            if (string.IsNullOrEmpty(secureKey))
+            {
+                return StatusCode(500, "Secure key is not configured.");
+            }
+
             if(loginRequest.Username == "admin" && loginRequest.Password == "test")
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes("ThisIsA256BitLongSecureKey!@#$%^");
+                var key = Encoding.UTF8.GetBytes(secureKey);
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
