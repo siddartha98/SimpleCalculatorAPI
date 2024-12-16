@@ -3,8 +3,20 @@ using SimpleCalculatorAPI.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DotNetEnv;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateLogger();
+
+// Set up Serilog as the logging provider
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .WriteTo.Console()
+    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+);
 
 Env.Load();
 
